@@ -85,13 +85,7 @@ def mergeImg2():
 
 
 def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
-    '''
-    Get player's ranked data
-    :param name: Player's name
-    :param tag: Player's tagline
-    :param region: Player's account region (Available values : ap, br, eu, kr, latam, na)
-    :return: Player's rank data
-    '''
+
     valid_region = ['ap', 'br', 'eu', 'kr', 'latam', 'na']
     if region.lower() not in valid_region:
         raise ValueError(f'"{region}" is not a valid region!')
@@ -101,6 +95,7 @@ def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
         r.encoding = 'utf-8'
         res = r.json()
         test = (pd.DataFrame(res))
+        test.to_json('matchdata.json')
         matchMap = test['data'][0]['metadata']['map']
         names = []
         agents = []
@@ -160,6 +155,19 @@ def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
         # fig.savefig("Total Damage Received"+str(zed) +
         # ".png", bbox_inches='tight')
 
+ff = open('matchdata.json')
+match = json.load(ff)
+def get_Most_killed_player():
+    
+    victim = []
+    killer = []
+    for kill in range(len(match['data']['0']['kills'])):
+        victim.append(match['data']['0']['kills'][kill]['victim_display_name'])
+        killer.append(match['data']['0']['kills'][kill]['killer_display_name'])
+    killer_victim = pd.DataFrame({'Killer': killer, 'Victim': victim})
+    
+    return str(killer_victim['Victim'].value_counts().keys()[0])
+
 
 client = discord.Client()
 
@@ -172,16 +180,16 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
-    if message.content.startswith('.stats'):
-        messageWithoutstats = message.content.replace(".stats ", "")
+    if message.content.startswith('.lastgameStats'):
+        messageWithoutstats = message.content.replace(".lastgameStats ", "")
 
         userData = messageWithoutstats.split('#')
         getMATCHHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
-        await message.channel.send('Here are the last game stats of ' + userData[0])
-        await message.channel.send('Kills/Deaths Ratio / Heashots')
+        await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
+        await message.channel.send('**Kills/Deaths Ratio / Heashots**')
         await message.channel.send(file=discord.File('merged_image1.jpg'))
-        await message.channel.send('Total Damage / Ultimate Casts')
+        await message.channel.send('**Total Damage / Ultimate Casts**')
         await message.channel.send(file=discord.File('merged_image2.jpg'))
-
+        await message.channel.send('**Most Killed Player (tamssoun) : '+get_Most_killed_player()+'**')
 
 client.run(token)
