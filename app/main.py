@@ -8,6 +8,12 @@ from discord.ext import commands
 import matplotlib as mpl
 from PIL import Image
 from creds import token
+from turtle import color
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+import json
+import pandas as pd
 
 
 def plotTotalDMG(dataFrameMatch):
@@ -155,18 +161,97 @@ def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
         # fig.savefig("Total Damage Received"+str(zed) +
         # ".png", bbox_inches='tight')
 
-ff = open('matchdata.json')
-match = json.load(ff)
+
 def get_Most_killed_player():
-    
+    ff = open('matchdata.json')
+    match = json.load(ff)
     victim = []
     killer = []
     for kill in range(len(match['data']['0']['kills'])):
         victim.append(match['data']['0']['kills'][kill]['victim_display_name'])
         killer.append(match['data']['0']['kills'][kill]['killer_display_name'])
     killer_victim = pd.DataFrame({'Killer': killer, 'Victim': victim})
-    
+
     return str(killer_victim['Victim'].value_counts().keys()[0])
+
+
+def centroid(vertexes):
+    _x_list = [vertex[0] for vertex in vertexes]
+    _y_list = [vertex[1] for vertex in vertexes]
+    _len = len(vertexes)
+    _x = sum(_x_list) / _len
+    _y = sum(_y_list) / _len
+    return(_x, _y)
+
+
+def get_Map():
+    matchdata = open('matchdata.json')
+    match = json.load(matchdata)
+    map_name = match['data']['0']['metadata']['map']
+    print(map_name)
+    if map_name == 'Ascent':
+        map_file = open('ascent.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Split':
+        map_file = open('bonsai.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Breeze':
+        map_file = open('foxtrot.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Fracture':
+        map_file = open('canyon.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Haven':
+        map_file = open('triad.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Icebox':
+        map_file = open('port.json')
+        mapGame = json.load(map_file)
+    elif map_name == 'Bind':
+        map_file = open('duality.json')
+        mapGame = json.load(map_file)
+    zones = []
+    x_a = []
+    x_y = []
+    xMultiplier = mapGame['multiplier']['x']
+    yMultiplier = mapGame['multiplier']['y']
+    xOffset = mapGame['offset']['x']
+    yOffset = mapGame['offset']['y']
+    for zone in range(len(mapGame['zones'])):
+
+        for i in range(len(mapGame['zones'][zone]['points'])):
+            zones.append(mapGame['zones'][zone]['name'])
+            x_value = (mapGame['zones'][zone]['points'][i]['x'])
+            y_value = (mapGame['zones'][zone]['points'][i]['y'])
+            x_a.append(x_value)
+            x_a.append(y_value)
+            x_y.append(x_a)
+            x_a = []
+    ascent_map = pd.DataFrame({'Coords': x_y, 'Zone': zones})
+    fig, ax = plt.subplots()
+    ax.set_facecolor('black')
+    for elem in set(ascent_map['Zone']):
+        y = list(ascent_map[ascent_map['Zone'] == elem]['Coords'])
+        print(y)
+        p = Polygon(y, facecolor='red', alpha=0.3,
+                    edgecolor='black', linewidth=1)
+        centroid(y)  # (0.5, 0.5)
+        ax.annotate(elem, xy=centroid(y), fontsize=5)
+        ax.add_patch(p)
+    ff = open('matchdata.json')
+    match = json.load(ff)
+    first_kill_location_x = (
+        match['data']['0']['kills'][0]['victim_death_location']['x'])*yMultiplier+yOffset
+    first_kill_location_y = (
+        match['data']['0']['kills'][0]['victim_death_location']['y'])*xMultiplier+xOffset
+    print(first_kill_location_x, first_kill_location_y)
+    plt.scatter(first_kill_location_x,
+                first_kill_location_y, c='blue', marker='x')
+    ax.set_title('First kill of the game \n' + match['data']['0']['kills'][0]
+                 ['victim_display_name']+' killed by '+match['data']['0']['kills'][0]['killer_display_name'])
+    plt.axis('off')
+    plt.savefig('mapStats.jpg', bbox_inches='tight',
+                facecolor=fig.get_facecolor(), dpi=300)
 
 
 client = discord.Client()
@@ -191,5 +276,9 @@ async def on_message(message):
         await message.channel.send('**Total Damage / Ultimate Casts**')
         await message.channel.send(file=discord.File('merged_image2.jpg'))
         await message.channel.send('**Most Killed Player (tamssoun) : '+get_Most_killed_player()+'**')
+        get_Map()
+        await message.channel.send('**First kill of the game**')
+        await message.channel.send(file=discord.File('mapStats.jpg'))
+
 
 client.run(token)
