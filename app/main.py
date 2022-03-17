@@ -250,8 +250,8 @@ def get_Map(player):
         p = Polygon(y, facecolor='white', alpha=0.15,
                     edgecolor='black', linewidth=0)
         centroid(y)  # (0.5, 0.5)
-        if elem == 'Defender Spawn' or elem == 'Attacker Spawn':
-            ax.annotate(elem, xy=centroid(y), fontsize=5, color='black')
+        # if elem == 'Defender Spawn' or elem == 'Attacker Spawn':
+        #ax.annotate(elem, xy=centroid(y), fontsize=5, color='black')
         ax.add_patch(p)
     ff = open('matchdata.json')
     match = json.load(ff)
@@ -265,20 +265,31 @@ def get_Map(player):
 
             plt.scatter(first_kill_location_x, 1 -
                         first_kill_location_y, c='red', marker='x')
+    for kill in range(len(match['data']['0']['kills'])):
+        if match['data']['0']['kills'][kill]['killer_display_name'] == player:
+
+            first_kill_location_x = (
+                match['data']['0']['kills'][kill]['victim_death_location']['y'])*xMultiplier+xOffset  # swaping x and y
+            first_kill_location_y = (
+                match['data']['0']['kills'][kill]['victim_death_location']['x'])*yMultiplier+yOffset
+
+            plt.scatter(first_kill_location_x, 1 -  # y=1-y to get the precise location
+                        first_kill_location_y, c='green', marker='o')
 
     plt.axis('off')
 
     ax.set_xlim(min(x_test), max(x_test))
     ax.set_ylim(min(y_test), max(y_test))
 
-    plt.rcParams.update({'text.color': "white",
-                         'axes.labelcolor': "green"})
     ax.imshow(img, extent=[round(min(x_test)), round(
         max(x_test)), round(min(y_test)), round(max(y_test))])
     playerName = player.split('#')
-    ax.set_title(playerName[0]+"'s Deaths ("+map_name+")")
+    ax.set_title(
+        playerName[0]+"'s Kills and Deaths ("+map_name+")", color='white')
+
     plt.savefig('mapStats.jpg', bbox_inches='tight',
                 facecolor='black', dpi=600)
+    plt.clf()
 
 
 client = discord.Client()
@@ -294,7 +305,7 @@ async def on_message(message):
 
     if message.content.startswith('.lastgameStats'):
         messageWithoutstats = message.content.replace(".lastgameStats ", "")
-        print(messageWithoutstats)
+
         userData = messageWithoutstats.split('#')
         getMATCHHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
         await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
@@ -302,10 +313,9 @@ async def on_message(message):
         await message.channel.send(file=discord.File('merged_image1.jpg'))
         await message.channel.send('**Total Damage / Ultimate Casts**')
         await message.channel.send(file=discord.File('merged_image2.jpg'))
-        await message.channel.send('**Most Killed Player (tamssoun) : '+get_Most_killed_player()+'**')
 
         get_Map(messageWithoutstats)
-        await message.channel.send("**Your deaths**")
+        await message.channel.send("**Your kills and deaths**")
         await message.channel.send(file=discord.File('mapStats.jpg'))
 
 
