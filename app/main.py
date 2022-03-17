@@ -184,7 +184,7 @@ def centroid(vertexes):
     return(_x, _y)
 
 
-def get_Map():
+def get_Map(player):
     matchdata = open('matchdata.json')
     match = json.load(matchdata)
     map_name = match['data']['0']['metadata']['map']
@@ -192,27 +192,37 @@ def get_Map():
     if map_name == 'Ascent':
         map_file = open('ascent.json')
         mapGame = json.load(map_file)
+        img = plt.imread("ascent.png")
     elif map_name == 'Split':
         map_file = open('bonsai.json')
         mapGame = json.load(map_file)
+        img = plt.imread("split.png")
     elif map_name == 'Breeze':
         map_file = open('foxtrot.json')
         mapGame = json.load(map_file)
+        img = plt.imread("breeze.png")
     elif map_name == 'Fracture':
         map_file = open('canyon.json')
         mapGame = json.load(map_file)
+        img = plt.imread("fracture.png")
     elif map_name == 'Haven':
         map_file = open('triad.json')
         mapGame = json.load(map_file)
+        img = plt.imread("haven.png")
     elif map_name == 'Icebox':
         map_file = open('port.json')
         mapGame = json.load(map_file)
+        img = plt.imread("icebox.png")
     elif map_name == 'Bind':
         map_file = open('duality.json')
         mapGame = json.load(map_file)
+        img = plt.imread("bind.png")
+
     zones = []
     x_a = []
     x_y = []
+    x_test = []
+    y_test = []
     xMultiplier = mapGame['multiplier']['x']
     yMultiplier = mapGame['multiplier']['y']
     xOffset = mapGame['offset']['x']
@@ -225,33 +235,50 @@ def get_Map():
             y_value = (mapGame['zones'][zone]['points'][i]['y'])
             x_a.append(x_value)
             x_a.append(y_value)
+            x_test.append(x_value)
+            y_test.append(y_value)
             x_y.append(x_a)
             x_a = []
+
     ascent_map = pd.DataFrame({'Coords': x_y, 'Zone': zones})
+
     fig, ax = plt.subplots()
     ax.set_facecolor('black')
     for elem in set(ascent_map['Zone']):
         y = list(ascent_map[ascent_map['Zone'] == elem]['Coords'])
-        print(y)
-        p = Polygon(y, facecolor='red', alpha=0.3,
-                    edgecolor='black', linewidth=1)
+
+        p = Polygon(y, facecolor='white', alpha=0.15,
+                    edgecolor='black', linewidth=0)
         centroid(y)  # (0.5, 0.5)
-        ax.annotate(elem, xy=centroid(y), fontsize=5)
+        if elem == 'Defender Spawn' or elem == 'Attacker Spawn':
+            ax.annotate(elem, xy=centroid(y), fontsize=5, color='black')
         ax.add_patch(p)
     ff = open('matchdata.json')
     match = json.load(ff)
-    first_kill_location_x = (
-        match['data']['0']['kills'][0]['victim_death_location']['x'])*yMultiplier+yOffset
-    first_kill_location_y = (
-        match['data']['0']['kills'][0]['victim_death_location']['y'])*xMultiplier+xOffset
-    print(first_kill_location_x, first_kill_location_y)
-    plt.scatter(first_kill_location_x,
-                first_kill_location_y, c='blue', marker='x')
-    ax.set_title('First kill of the game \n' + match['data']['0']['kills'][0]
-                 ['victim_display_name']+' killed by '+match['data']['0']['kills'][0]['killer_display_name'])
+    for kill in range(len(match['data']['0']['kills'])):
+        if match['data']['0']['kills'][kill]['victim_display_name'] == player:
+
+            first_kill_location_x = (
+                match['data']['0']['kills'][kill]['victim_death_location']['y'])*xMultiplier+xOffset
+            first_kill_location_y = (
+                match['data']['0']['kills'][kill]['victim_death_location']['x'])*yMultiplier+yOffset
+
+            plt.scatter(first_kill_location_x, 1 -
+                        first_kill_location_y, c='red', marker='x')
+
     plt.axis('off')
+
+    ax.set_xlim(min(x_test), max(x_test))
+    ax.set_ylim(min(y_test), max(y_test))
+
+    plt.rcParams.update({'text.color': "white",
+                         'axes.labelcolor': "green"})
+    ax.imshow(img, extent=[round(min(x_test)), round(
+        max(x_test)), round(min(y_test)), round(max(y_test))])
+    playerName = player.split('#')
+    ax.set_title(playerName[0]+"'s Deaths ("+map_name+")")
     plt.savefig('mapStats.jpg', bbox_inches='tight',
-                facecolor=fig.get_facecolor(), dpi=300)
+                facecolor='black', dpi=600)
 
 
 client = discord.Client()
@@ -267,7 +294,7 @@ async def on_message(message):
 
     if message.content.startswith('.lastgameStats'):
         messageWithoutstats = message.content.replace(".lastgameStats ", "")
-
+        print(messageWithoutstats)
         userData = messageWithoutstats.split('#')
         getMATCHHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
         await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
@@ -276,8 +303,9 @@ async def on_message(message):
         await message.channel.send('**Total Damage / Ultimate Casts**')
         await message.channel.send(file=discord.File('merged_image2.jpg'))
         await message.channel.send('**Most Killed Player (tamssoun) : '+get_Most_killed_player()+'**')
-        get_Map()
-        await message.channel.send('**First kill of the game**')
+
+        get_Map(messageWithoutstats)
+        await message.channel.send("**Your deaths**")
         await message.channel.send(file=discord.File('mapStats.jpg'))
 
 
