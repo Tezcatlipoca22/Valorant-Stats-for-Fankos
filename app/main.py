@@ -70,7 +70,7 @@ def mergeImg1():
         'RGB', (2*image1_size[0], image1_size[1]), (250, 250, 250))
     new_image.paste(image1, (0, 0))
     new_image.paste(image2, (image1_size[0], 0))
-    new_image.save("merged_image1.jpg", "JPEG")
+    new_image.save("merged_image1.png", "PNG")
 
 
 def mergeImg2():
@@ -87,7 +87,7 @@ def mergeImg2():
         'RGB', (2*image1_size[0], image1_size[1]), (250, 250, 250))
     new_image.paste(image1, (0, 0))
     new_image.paste(image2, (image1_size[0], 0))
-    new_image.save("merged_image2.jpg", "JPEG")
+    new_image.save("merged_image2.png", "PNG")
 
 
 def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
@@ -152,7 +152,6 @@ def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
         plotUltUsage(dataFrameMatch=data_final)
         mergeImg1()
         mergeImg2()
-        data_final.to_excel('data_final'+str(zed)+'.xlsx')
 
         # totalDamageRe = sns.barplot(data=data_final.sort_values(
         # by='Total Damage received', ascending=False), x='Joueur', y='Total Damage received', palette='Reds_r')
@@ -188,7 +187,7 @@ def get_Map(player):
     matchdata = open('matchdata.json')
     match = json.load(matchdata)
     map_name = match['data']['0']['metadata']['map']
-    print(map_name)
+
     if map_name == 'Ascent':
         map_file = open('ascent.json')
         mapGame = json.load(map_file)
@@ -287,7 +286,7 @@ def get_Map(player):
     ax.set_title(
         playerName[0]+"'s Kills and Deaths ("+map_name+")", color='white')
 
-    plt.savefig('mapStats.jpg', bbox_inches='tight',
+    plt.savefig('mapStats.png', bbox_inches='tight',
                 facecolor='black', dpi=600)
     plt.clf()
 
@@ -316,7 +315,7 @@ async def on_message(message):
 
         get_Map(messageWithoutstats)
         await message.channel.send("**Your kills and deaths**")
-        await message.channel.send(file=discord.File('mapStats.jpg'))
+        await message.channel.send(file=discord.File('mapStats.png'))
 
 
 client.run(token)
