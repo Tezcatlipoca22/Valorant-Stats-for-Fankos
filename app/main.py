@@ -90,14 +90,14 @@ def mergeImg2():
     new_image.save("merged_image2.jpg", "JPEG")
 
 
-def getMatchHistory(name: str, tag: str, region: str, zed: int) -> dict:
+def getMatchHistory(name: str, tag: str, region: str, zed: int, filtre: str) -> dict:
 
     valid_region = ['ap', 'br', 'eu', 'kr', 'latam', 'na']
     if region.lower() not in valid_region:
         raise ValueError(f'"{region}" is not a valid region!')
     else:
         r = requests.get(
-            f'https://api.henrikdev.xyz/valorant/v3/matches/{region}/{name}/{tag}')
+            f'https://api.henrikdev.xyz/valorant/v3/matches/{region}/{name}/{tag}?filter={filtre}')
         r.encoding = 'utf-8'
         res = r.json()
         test = (pd.DataFrame(res))
@@ -306,13 +306,13 @@ async def on_message(message):
         messageWithoutstats = message.content.replace(".lastgameStats ", "")
 
         userData = messageWithoutstats.split('#')
-        getMatchHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
+        getMatchHistory(name=userData[0], tag=userData[1],
+                        region='eu', zed=0, filtre='unrated')
         await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
         await message.channel.send('**Kills/Deaths Ratio / Heashots**')
         await message.channel.send(file=discord.File('merged_image1.jpg'))
         await message.channel.send('**Total Damage / Ultimate Casts**')
         await message.channel.send(file=discord.File('merged_image2.jpg'))
-
         get_Map(messageWithoutstats)
         await message.channel.send("**Your kills and deaths**")
         await message.channel.send(file=discord.File('mapStats.png'))
