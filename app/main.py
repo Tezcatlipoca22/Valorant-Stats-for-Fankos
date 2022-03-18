@@ -70,7 +70,7 @@ def mergeImg1():
         'RGB', (2*image1_size[0], image1_size[1]), (250, 250, 250))
     new_image.paste(image1, (0, 0))
     new_image.paste(image2, (image1_size[0], 0))
-    new_image.save("merged_image1.png", "PNG")
+    new_image.save("merged_image1.jpg", "JPEG")
 
 
 def mergeImg2():
@@ -87,10 +87,10 @@ def mergeImg2():
         'RGB', (2*image1_size[0], image1_size[1]), (250, 250, 250))
     new_image.paste(image1, (0, 0))
     new_image.paste(image2, (image1_size[0], 0))
-    new_image.save("merged_image2.png", "PNG")
+    new_image.save("merged_image2.jpg", "JPEG")
 
 
-def getMATCHHistory(name: str, tag: str, region: str, zed: int) -> dict:
+def getMatchHistory(name: str, tag: str, region: str, zed: int) -> dict:
 
     valid_region = ['ap', 'br', 'eu', 'kr', 'latam', 'na']
     if region.lower() not in valid_region:
@@ -306,7 +306,7 @@ async def on_message(message):
         messageWithoutstats = message.content.replace(".lastgameStats ", "")
 
         userData = messageWithoutstats.split('#')
-        getMATCHHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
+        getMatchHistory(name=userData[0], tag=userData[1], region='eu', zed=0)
         await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
         await message.channel.send('**Kills/Deaths Ratio / Heashots**')
         await message.channel.send(file=discord.File('merged_image1.jpg'))
