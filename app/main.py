@@ -102,7 +102,7 @@ def getMatchHistory(name: str, tag: str, region: str, zed: int, filtre: str) -> 
         res = r.json()
         test = (pd.DataFrame(res))
         test.to_json('matchdata.json')
-        matchMap = test['data'][0]['metadata']['map']
+        matchMap = test['data'][zed]['metadata']['map']
         names = []
         agents = []
         scores = []
@@ -302,20 +302,29 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
-    if message.content.startswith('.lastgameStats'):
-        messageWithoutstats = message.content.replace(".lastgameStats ", "")
+    if message.content.startswith('.lastunratedStats'):
+        messageWithoutstats = message.content.replace(".lastunratedStats ", "")
 
         userData = messageWithoutstats.split('#')
+
         getMatchHistory(name=userData[0], tag=userData[1],
                         region='eu', zed=0, filtre='unrated')
-        await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
-        await message.channel.send('**Kills/Deaths Ratio / Heashots**')
-        await message.channel.send(file=discord.File('merged_image1.jpg'))
-        await message.channel.send('**Total Damage / Ultimate Casts**')
-        await message.channel.send(file=discord.File('merged_image2.jpg'))
-        get_Map(messageWithoutstats)
-        await message.channel.send("**Your kills and deaths**")
-        await message.channel.send(file=discord.File('mapStats.png'))
+    else:
+        messageWithoutstats = message.content.replace(".lastcustomStats ", "")
+
+        userData = messageWithoutstats.split('#')
+
+        getMatchHistory(name=userData[0], tag=userData[1],
+                        region='eu', zed=0, filtre='custom')
+
+    await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
+    await message.channel.send('**Kills/Deaths Ratio / Heashots**')
+    await message.channel.send(file=discord.File('merged_image1.jpg'))
+    await message.channel.send('**Total Damage / Ultimate Casts**')
+    await message.channel.send(file=discord.File('merged_image2.jpg'))
+    get_Map(messageWithoutstats)
+    await message.channel.send("**Your kills and deaths**")
+    await message.channel.send(file=discord.File('mapStats.png'))
 
 
 client.run(token)
