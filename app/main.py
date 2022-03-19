@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import json
 import pandas as pd
+from discord import Embed
 
 
 def plotTotalDMG(dataFrameMatch):
@@ -115,6 +116,9 @@ def getMatchHistory(name: str, tag: str, region: str, zed: int, filtre: str) -> 
         cCasts = []
         eCasts = []
         xCasts = []
+        playersIconUrl = []
+        bodyshots = []
+        legshots = []
 
         for i in range(0, 10):
             names.append(test['data'][zed]['players']
@@ -141,9 +145,15 @@ def getMatchHistory(name: str, tag: str, region: str, zed: int, filtre: str) -> 
                           ['all_players'][i]['ability_casts']['e_cast'])
             xCasts.append(test['data'][zed]['players']
                           ['all_players'][i]['ability_casts']['x_cast'])
+            playersIconUrl.append(test['data'][zed]['players']
+                                  ['all_players'][i]['assets']['agent']['small'])
+            bodyshots.append(test['data'][zed]['players']
+                             ['all_players'][i]['stats']['bodyshots'])
+            legshots.append(test['data'][zed]['players']
+                            ['all_players'][i]['stats']['legshots'])
 
         data_final = pd.DataFrame({'Joueur': names, 'Agent': agents, 'Scores': scores,
-                                  'Total Damage': damage_made, 'Total Damage received': damage_received, 'Headshots': headshots, 'Kills': kills, 'Deaths': deaths, 'Ultimate': xCasts})
+                                  'Total Damage': damage_made, 'Total Damage received': damage_received, 'Headshots': headshots, 'Kills': kills, 'Deaths': deaths, 'Ultimate': xCasts, 'PlayerIcon': playersIconUrl, 'Bodyshots': bodyshots, 'Legshots': legshots})
         data_final['KD'] = [data_final['Kills'].iloc[num] /
                             data_final['Deaths'].iloc[num] for num in range(0, 10)]
         plotTotalDMG(dataFrameMatch=data_final)
@@ -152,7 +162,21 @@ def getMatchHistory(name: str, tag: str, region: str, zed: int, filtre: str) -> 
         plotUltUsage(dataFrameMatch=data_final)
         mergeImg1()
         mergeImg2()
-
+        playerName = data_final[data_final['Joueur']
+                                == name]['Joueur'].values[0]
+        playerAgent = data_final[data_final['Joueur']
+                                 == name]['Agent'].values[0]
+        playerScore = data_final[data_final['Joueur']
+                                 == name]['Scores'].values[0]
+        playerAgentIcon = data_final[data_final['Joueur']
+                                     == name]['PlayerIcon'].values[0]
+        playerKD = data_final[data_final['Joueur'] == name]['KD'].values[0]
+        playerHeadshotsPercent = data_final[data_final['Joueur'] == name]['Headshots'].values[0]/(
+            data_final[data_final['Joueur'] == name]['Headshots'].values[0]+data_final[data_final['Joueur'] == name]['Bodyshots'].values[0]+data_final[data_final['Joueur'] == name]['Legshots'].values[0])
+        print(playerHeadshotsPercent)
+        damagePerRound = (data_final[data_final['Joueur']
+                                     == name]['Total Damage'].values[0])/test['data'][zed]['metadata']['rounds_played']
+        return playerName, playerAgent, playerScore, playerAgentIcon, playerKD, playerHeadshotsPercent, damagePerRound
         # totalDamageRe = sns.barplot(data=data_final.sort_values(
         # by='Total Damage received', ascending=False), x='Joueur', y='Total Damage received', palette='Reds_r')
         #fig = totalDamageRe.get_figure()
@@ -307,24 +331,35 @@ async def on_message(message):
 
         userData = messageWithoutstats.split('#')
 
-        getMatchHistory(name=userData[0], tag=userData[1],
-                        region='eu', zed=0, filtre='unrated')
+        playerName, playerAgent, playerScore, playerAgentIcon, playerKD, playerHeadshotsPercent, damagePerRound = getMatchHistory(name=userData[0], tag=userData[1],
+                                                                                                                                  region='eu', zed=0, filtre='unrated')
     else:
         messageWithoutstats = message.content.replace(".lastcustomStats ", "")
 
         userData = messageWithoutstats.split('#')
 
-        getMatchHistory(name=userData[0], tag=userData[1],
-                        region='eu', zed=0, filtre='custom')
+        playerName, playerAgent, playerScore, playerAgentIcon, playerKD, playerHeadshotsPercent, damagePerRound = getMatchHistory(name=userData[0], tag=userData[1],
+                                                                                                                                  region='eu', zed=0, filtre='custom')
 
     await message.channel.send('**Here are the last game stats of ' + userData[0]+'**')
-    await message.channel.send('**Kills/Deaths Ratio / Heashots**')
-    await message.channel.send(file=discord.File('merged_image1.jpg'))
-    await message.channel.send('**Total Damage / Ultimate Casts**')
-    await message.channel.send(file=discord.File('merged_image2.jpg'))
+    # await message.channel.send('**Kills/Deaths Ratio / Heashots**')
+    # await message.channel.send(file=discord.File('merged_image1.jpg'))
+    # await message.channel.send('**Total Damage / Ultimate Casts**')
+    # await message.channel.send(file=discord.File('merged_image2.jpg'))
+    embed = Embed(color=0xfa4454)
+    embed.set_author(name=playerName+" stats", icon_url=playerAgentIcon)
+    embed.add_field(name="K/D", value="{:.2f}".format(playerKD), inline=True)
+    embed.add_field(name="Damage/Round",
+                    value="{:.2f}".format(damagePerRound), inline=True)
+    embed.add_field(name="Score", value=playerScore, inline=True)
+
+    embed.add_field(name="Headshots%",
+                    value="{:.2%}".format(playerHeadshotsPercent), inline=True)
     get_Map(messageWithoutstats)
     await message.channel.send("**Your kills and deaths**")
     await message.channel.send(file=discord.File('mapStats.png'))
+
+    await message.channel.send(embed=embed)
 
 
 client.run(token)
