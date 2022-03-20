@@ -15,6 +15,8 @@ from matplotlib.patches import Polygon
 import json
 import pandas as pd
 from discord import Embed
+from api_service import ApiService
+from threading import Timer
 
 
 def plotTotalDMG(dataFrameMatch):
@@ -361,5 +363,6 @@ async def on_message(message):
 
     await message.channel.send(embed=embed)
 
-
+updateMatchesThreading = Timer(60.0, ApiService.updateDB_newMatches)
+updateMatchesThreading.start()
 client.run(token)
