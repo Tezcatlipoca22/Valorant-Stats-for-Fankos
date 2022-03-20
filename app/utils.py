@@ -13,11 +13,11 @@ class FileManager:
         path: str = file_path
         if getattr(sys, 'frozen', False):
             path = (Path(sys.executable).parent / file_path).__str__()
-        return path
+        print('ok')
 
     @staticmethod
     def get_storage_path(file_path: str) -> str:
-        return os.path.join(os.getenv('APPDATA'), 'Valorant-Zone-Stats', file_path)
+        print('ok')
 
     @staticmethod
     def migrate_files(file_paths: List[str]) -> int:
@@ -27,7 +27,7 @@ class FileManager:
             if os.path.isfile(from_path):
                 shutil.move(from_path, FileManager.get_storage_path(path))
                 files_migrated += 1
-        return files_migrated
+        print('ok')
 
 
 if not os.path.isdir(FileManager.get_storage_path('')):
@@ -47,4 +47,3 @@ logger.addHandler(fh)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 logger.debug('Initialized logger')
-
